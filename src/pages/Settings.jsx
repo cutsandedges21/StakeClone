@@ -1,7 +1,7 @@
-﻿import { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useWallet } from '../context/WalletContext'
-import { supabase } from '../lib/supabase'
+import { loadData, saveData } from '../lib/store'
 
 export default function Settings() {
   const { user } = useAuth()
@@ -12,23 +12,24 @@ export default function Settings() {
 
   useEffect(() => {
     if (!user) return
-    supabase.from('profiles').select('starting_balance').eq('id', user.id).single()
-      .then(({ data }) => {
-        if (data) { setStartingBal(data.starting_balance); setAmount(data.starting_balance) }
-      })
+    const data = loadData()
+    setStartingBal(data.startingBalance)
+    setAmount(data.startingBalance)
   }, [user])
 
-  const applyBalance = async () => {
+  const applyBalance = () => {
     const v = parseFloat(amount)
     if (!v || v <= 0) return
-    await supabase.from('profiles').update({ balance: v, starting_balance: v }).eq('id', user.id)
-    await updateBalance(v)
+    const data = loadData()
+    data.startingBalance = v
+    saveData(data)
+    updateBalance(v)
     setStartingBal(v)
     flash()
   }
 
-  const resetBalance = async () => {
-    await updateBalance(startingBal)
+  const resetBalance = () => {
+    updateBalance(startingBal)
     flash()
   }
 
@@ -37,7 +38,7 @@ export default function Settings() {
   if (!user) return (
     <div style={{padding:'60px 24px',textAlign:'center',color:'var(--text-secondary)'}}>
       <div style={{fontSize:'52px',marginBottom:'16px'}}>⚙️</div>
-      <div style={{fontSize:'18px',fontWeight:600,color:'var(--text-primary)'}}>Sign in to access settings</div>
+      <div style={{fontSize:'18px',fontWeight:600,color:'var(--text-primary)'}}>Log in to access settings</div>
     </div>
   )
 
@@ -81,12 +82,8 @@ export default function Settings() {
         <div className="settings-title">Account</div>
         <div className="card" style={{display:'flex',flexDirection:'column',gap:'8px'}}>
           <div style={{display:'flex',justifyContent:'space-between'}}>
-            <span style={{color:'var(--text-secondary)'}}>Email</span>
-            <span style={{fontWeight:600}}>{user.email}</span>
-          </div>
-          <div style={{display:'flex',justifyContent:'space-between'}}>
-            <span style={{color:'var(--text-secondary)'}}>User ID</span>
-            <span style={{fontSize:'12px',color:'var(--text-muted)'}}>{user.id?.slice(0,8)}...</span>
+            <span style={{color:'var(--text-secondary)'}}>Username</span>
+            <span style={{fontWeight:600}}>{user.username}</span>
           </div>
         </div>
       </div>

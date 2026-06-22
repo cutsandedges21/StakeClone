@@ -87,7 +87,8 @@ export default function Crash() {
 
     timerRef.current = setInterval(() => {
       const t = (Date.now() - startRef.current) / 1000
-      const m = parseFloat(Math.exp(0.25 * t).toFixed(2))
+      // Very gradual at the start, then accelerates: exp of a super-linear time term.
+      const m = parseFloat(Math.exp(0.06 * Math.pow(t, 1.6)).toFixed(2))
       pointsRef.current.push({ x: t * 120, y: m })
       setMult(m)
       drawGraph(false)

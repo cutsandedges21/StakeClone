@@ -1,10 +1,11 @@
-﻿import { useState } from 'react'
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useWallet } from '../../context/WalletContext'
 import AuthModal from '../Auth/AuthModal'
 
 export default function Header({ onMenuClick }) {
-  const { user, signOut } = useAuth()
+  const { user, logOut } = useAuth()
   const { balance } = useWallet()
   const [showAuth, setShowAuth] = useState(false)
 
@@ -12,7 +13,7 @@ export default function Header({ onMenuClick }) {
     <>
       <header className="app-header">
         <button className="btn-icon" id="menu-btn" onClick={onMenuClick} title="Menu">☰</button>
-        <div className="header-logo">STAKE</div>
+        <Link to="/" className="header-logo">STAKE</Link>
 
         <div className="header-balance">
           <span className="coin">💰</span>
@@ -24,19 +25,16 @@ export default function Header({ onMenuClick }) {
           {user ? (
             <>
               <span className="header-user" style={{maxWidth:'120px',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
-                {user.email?.split('@')[0]}
+                {user.username}
               </span>
-              <button className="btn btn-outline" onClick={signOut}>Sign Out</button>
+              <button className="btn btn-outline" onClick={logOut}>Log Out</button>
             </>
           ) : (
-            <>
-              <button className="btn btn-outline" onClick={() => setShowAuth('login')}>Sign In</button>
-              <button className="btn btn-primary" onClick={() => setShowAuth('signup')}>Sign Up</button>
-            </>
+            <button className="btn btn-primary" onClick={() => setShowAuth(true)}>Log In</button>
           )}
         </div>
       </header>
-      {showAuth && <AuthModal mode={showAuth} onClose={() => setShowAuth(false)} />}
+      {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}
       <style>{`
         #menu-btn { display: none; }
         @media(max-width:900px) { #menu-btn { display: flex !important; } }

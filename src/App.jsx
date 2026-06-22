@@ -1,7 +1,8 @@
-﻿import { Routes, Route, Navigate } from 'react-router-dom'
+﻿import { Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import { WalletProvider } from './context/WalletContext'
 import Layout from './components/Layout/Layout'
+import Home from './pages/Home'
 import Crash from './games/Crash/Crash'
 import Mines from './games/Mines/Mines'
 import Plinko from './games/Plinko/Plinko'
@@ -19,7 +20,7 @@ export default function App() {
       <WalletProvider>
         <Layout>
           <Routes>
-            <Route path="/" element={<Navigate to="/crash" replace />} />
+            <Route path="/" element={<Home />} />
             <Route path="/crash" element={<Crash />} />
             <Route path="/mines" element={<Mines />} />
             <Route path="/plinko" element={<Plinko />} />

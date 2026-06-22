@@ -1,6 +1,6 @@
 ﻿import { useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { supabase } from '../lib/supabase'
+import { loadData } from '../lib/store'
 
 const ICONS = { crash:'📈', mines:'💎', plinko:'🎯', dice:'🎲', limbo:'🚀', keno:'🔢', 'dragon-tower':'🐉', chicken:'🐔' }
 
@@ -11,14 +11,16 @@ export default function Stats() {
 
   useEffect(() => {
     if (!user) { setLoading(false); return }
-    supabase.from('game_stats').select('*').eq('user_id', user.id)
-      .then(({ data }) => { setStats(data || []); setLoading(false) })
+    const data = loadData()
+    const rows = Object.entries(data.stats).map(([game, s]) => ({ game, ...s }))
+    setStats(rows)
+    setLoading(false)
   }, [user])
 
   if (!user) return (
     <div style={{padding:'60px 24px',textAlign:'center',color:'var(--text-secondary)'}}>
       <div style={{fontSize:'52px',marginBottom:'16px'}}>📊</div>
-      <div style={{fontSize:'18px',fontWeight:600,marginBottom:'8px',color:'var(--text-primary)'}}>Sign in to view stats</div>
+      <div style={{fontSize:'18px',fontWeight:600,marginBottom:'8px',color:'var(--text-primary)'}}>Log in to view stats</div>
       <div>Your game statistics are saved to your account</div>
     </div>
   )

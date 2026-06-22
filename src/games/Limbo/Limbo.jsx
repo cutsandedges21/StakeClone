@@ -24,15 +24,15 @@ export default function Limbo() {
     setResult(null)
     setDisplay('?')
 
-    // Animate counting up
-    const duration = 1200
+    // Animate counting up — very gradual at first, then accelerates (ease-in quartic)
+    const duration = 1700
     const start = Date.now()
     const final = genLimbo()
     await new Promise(resolve => {
       const tick = () => {
         const elapsed = Date.now() - start
         const p = Math.min(elapsed / duration, 1)
-        const cur = parseFloat((1 + (final - 1) * Math.pow(p, 3)).toFixed(2))
+        const cur = parseFloat((1 + (final - 1) * Math.pow(p, 4)).toFixed(2))
         setDisplay(cur.toFixed(2))
         if (p < 1) requestAnimationFrame(tick)
         else resolve()

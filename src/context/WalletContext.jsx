@@ -1,78 +1,67 @@
-﻿import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react'
+import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react'
 import { useAuth } from './AuthContext'
-import { supabase } from '../lib/supabase'
+import { loadData, saveData } from '../lib/store'
 
 const WalletContext = createContext(null)
 export const useWallet = () => useContext(WalletContext)
+
+const blankStat = () => ({
+  total_bets: 0, total_wagered: 0, total_won: 0,
+  net_profit: 0, biggest_win: 0, biggest_loss: 0,
+})
 
 export function WalletProvider({ children }) {
   const { user } = useAuth()
   const [balance, setBalance] = useState(0)
   const balanceRef = useRef(0)
 
-  const fetchProfile = useCallback(async () => {
+  const fetchProfile = useCallback(() => {
     if (!user) { setBalance(0); balanceRef.current = 0; return }
-    const { data } = await supabase
-      .from('profiles')
-      .select('balance')
-      .eq('id', user.id)
-      .single()
-    if (data) { setBalance(data.balance); balanceRef.current = data.balance }
+    const data = loadData()
+    setBalance(data.balance)
+    balanceRef.current = data.balance
   }, [user])
 
   useEffect(() => { fetchProfile() }, [fetchProfile])
 
-  const updateBalance = useCallback(async (newBal) => {
+  const updateBalance = useCallback((newBal) => {
     if (!user) return
     const rounded = Math.max(0, parseFloat(newBal.toFixed(2)))
     setBalance(rounded)
     balanceRef.current = rounded
-    await supabase
-      .from('profiles')
-      .update({ balance: rounded })
-      .eq('id', user.id)
+    const data = loadData()
+    data.balance = rounded
+    saveData(data)
   }, [user])
 
-  const recordBet = useCallback(async ({ game, betAmount, payout, multiplier, result }) => {
+  const recordBet = useCallback(({ game, betAmount, payout, multiplier, result }) => {
     if (!user || betAmount <= 0) return
     const profit = payout - betAmount
     const newBal = balanceRef.current + profit
-    await updateBalance(newBal)
 
-    await supabase.from('bet_history').insert({
-      user_id: user.id, game,
-      bet_amount: betAmount, payout, profit, multiplier, result,
-    })
+    const rounded = Math.max(0, parseFloat(newBal.toFixed(2)))
+    setBalance(rounded)
+    balanceRef.current = rounded
 
-    const { data: existing } = await supabase
-      .from('game_stats')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('game', game)
-      .maybeSingle()
+    const data = loadData()
+    data.balance = rounded
 
-    if (existing) {
-      await supabase.from('game_stats').update({
-        total_bets: existing.total_bets + 1,
-        total_wagered: existing.total_wagered + betAmount,
-        total_won: existing.total_won + payout,
-        net_profit: existing.net_profit + profit,
-        biggest_win: Math.max(existing.biggest_win, result === 'win' ? profit : 0),
-        biggest_loss: Math.min(existing.biggest_loss, result === 'loss' ? profit : 0),
-        updated_at: new Date().toISOString(),
-      }).eq('user_id', user.id).eq('game', game)
-    } else {
-      await supabase.from('game_stats').insert({
-        user_id: user.id, game,
-        total_bets: 1,
-        total_wagered: betAmount,
-        total_won: payout,
-        net_profit: profit,
-        biggest_win: result === 'win' ? profit : 0,
-        biggest_loss: result === 'loss' ? profit : 0,
-      })
-    }
-  }, [user, updateBalance])
+    const s = data.stats[game] || blankStat()
+    s.total_bets += 1
+    s.total_wagered += betAmount
+    s.total_won += payout
+    s.net_profit += profit
+    s.biggest_win = Math.max(s.biggest_win, result === 'win' ? profit : 0)
+    s.biggest_loss = Math.min(s.biggest_loss, result === 'loss' ? profit : 0)
+    data.stats[game] = s
+
+    data.history = [
+      { game, betAmount, payout, profit, multiplier, result },
+      ...data.history,
+    ].slice(0, 100)
+
+    saveData(data)
+  }, [user])
 
   return (
     <WalletContext.Provider value={{ balance, fetchProfile, updateBalance, recordBet }}>

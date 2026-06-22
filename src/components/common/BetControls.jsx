@@ -33,7 +33,7 @@ export default function BetControls({
           <button className="bet-quick-btn" onClick={double} disabled={isGuest || playing}>2×</button>
           {!isGuest && <button className="bet-quick-btn" onClick={max} disabled={playing}>Max</button>}
         </div>
-        {isGuest && <div className="guest-hint">Sign in to place real bets</div>}
+        {isGuest && <div className="guest-hint">Log in to place real bets</div>}
       </div>
 
       {children}
